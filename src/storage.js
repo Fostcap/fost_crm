@@ -1,22 +1,8 @@
 /**
- * Storage abstraction for Fost CRM.
+ * Storage + Auth abstraction for Fost CRM.
  *
- * Claude sandbox  → window.storage (proprietary API)
- * Vercel/browser  → Supabase (PostgreSQL)
- *
- * SETUP (Supabase):
- *   1. Create project at https://supabase.com (free)
- *   2. Run this SQL in Supabase SQL Editor:
- *
- *      create table if not exists kv_store (
- *        key   text primary key,
- *        value text not null,
- *        updated_at timestamptz default now()
- *      );
- *      alter table kv_store enable row level security;
- *      create policy "allow all" on kv_store for all using (true) with check (true);
- *
- *   3. Copy project URL + anon key into .env
+ * Claude sandbox  → window.storage (no auth)
+ * Vercel/browser  → Supabase (with auth)
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -33,13 +19,50 @@ function getSupabase() {
   const url = import.meta.env.VITE_SUPABASE_URL;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) {
-    console.warn("[storage] Supabase credentials missing — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env");
+    console.warn("[storage] Supabase credentials missing");
     return null;
   }
   _sb = createClient(url, key);
   return _sb;
 }
 
+// ── Auth ────────────────────────────────────────────────
+const auth = {
+  async signIn(email, password) {
+    const sb = getSupabase();
+    if (!sb) return { error: { message: "Supabase not configured" } };
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    return { data, error };
+  },
+
+  async signOut() {
+    const sb = getSupabase();
+    if (!sb) return;
+    await sb.auth.signOut();
+  },
+
+  async getUser() {
+    const sb = getSupabase();
+    if (!sb) return null;
+    const { data } = await sb.auth.getUser();
+    return data?.user || null;
+  },
+
+  async getSession() {
+    const sb = getSupabase();
+    if (!sb) return null;
+    const { data } = await sb.auth.getSession();
+    return data?.session || null;
+  },
+
+  onAuthStateChange(callback) {
+    const sb = getSupabase();
+    if (!sb) return { data: { subscription: { unsubscribe: function(){} } } };
+    return sb.auth.onAuthStateChange(callback);
+  }
+};
+
+// ── Storage ─────────────────────────────────────────────
 async function supaGet(key) {
   const sb = getSupabase();
   if (!sb) return null;
@@ -68,4 +91,5 @@ const storage = {
   },
 };
 
+export { auth };
 export default storage;
