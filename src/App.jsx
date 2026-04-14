@@ -91,23 +91,6 @@ export default function App(){
   var [authed,setAuthed]=s(false);
   var [authLoading,setAuthLoading]=s(true);
   var [userEmail,setUserEmail]=s("");
-
-  useEffect(function(){
-    var check=async function(){
-      var session=await auth.getSession();
-      if(session){setAuthed(true);setUserEmail(session.user?session.user.email:"");}
-      setAuthLoading(false);
-    };
-    check();
-    var sub=auth.onAuthStateChange(function(event,session){
-      if(session){setAuthed(true);setUserEmail(session.user?session.user.email:"");}
-      else{setAuthed(false);setUserEmail("");}
-    });
-    return function(){if(sub&&sub.data&&sub.data.subscription)sub.data.subscription.unsubscribe();};
-  },[]);
-
-  if(authLoading)return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",color:"#1a2744",fontSize:16,fontFamily:"Inter,sans-serif"}}>Loading...</div>;
-  if(!authed)return <LoginScreen onAuth={function(){setAuthed(true);}}/>;
   var [tab,setTab]=s("dash"),[crm,setCrm]=s("clients"),[cls,setCls]=s([]),[cts,setCts]=s([]),[its,setIts]=s([]),[coms,setComs]=s([]),[team,setTeam]=s(D0_TEAM),[fr,setFr]=s(D0_FR);
   var [q,setQ]=s(""),[mod,setMod]=s(null),[sel,setSel]=s(null),[fSt,setFSt]=s("All"),[fCo,setFCo]=s("All"),[clSub,setClSub]=s("inst"),[ok,setOk]=s(false),[mf,setMf]=s({});
   var [intF,setIntF]=s({ctid:"",cid:"",date:"",type:"",note:"",nextStep:"",nextStepDate:"",participants:[],fostTeam:[],emailSent:""});
@@ -143,6 +126,22 @@ export default function App(){
   var addInt=function(){if(!intF.cid)return;var nI=its.concat([M(intF,{id:uid()})]);setIts(nI);itsR.current=nI;markDirty();setIntF(M(intF,{note:"",nextStep:"",nextStepDate:"",participants:[],fostTeam:[],emailSent:""}));};
   var upCl=function(id,k,v){uCl(cls.map(function(c){if(c.id!==id)return c;var u={};u[k]=v;return M(c,u);}));};
 
+  useEffect(function(){
+    var check=async function(){
+      var session=await auth.getSession();
+      if(session){setAuthed(true);setUserEmail(session.user?session.user.email:"");}
+      setAuthLoading(false);
+    };
+    check();
+    var sub=auth.onAuthStateChange(function(event,session){
+      if(session){setAuthed(true);setUserEmail(session.user?session.user.email:"");}
+      else{setAuthed(false);setUserEmail("");}
+    });
+    return function(){if(sub&&sub.data&&sub.data.subscription)sub.data.subscription.unsubscribe();};
+  },[]);
+
+  if(authLoading)return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",color:C.navy,fontSize:16,fontFamily:"Inter,sans-serif"}}>Loading...</div>;
+  if(!authed)return <LoginScreen onAuth={function(){setAuthed(true);}}/>;
   if(!ok)return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",color:C.navy,fontSize:16}}>Loading FOST...</div>;
 
   function renderIntRow(it,showCl,hideD){
