@@ -102,20 +102,24 @@ export default function App(){
   var KS="fost9";
   var SEED={cls:[],cts:[],its:[],team:D0_TEAM,fr:D0_FR,coms:[],mktLists:[],mktTpls:[]};
 
-  useEffect(function(){if(!authed)return;(async function(){var loaded=false;try{var rv=await storage.get(KS,true);if(rv&&rv.value){var d=JSON.parse(rv.value);setLoadInfo("Loaded: "+(d.cls||[]).length+"cl/"+(d.cts||[]).length+"ct/"+(d.its||[]).length+"int");if(d.cls&&d.cls.length>0){setCls(d.cls);if(d.cts)setCts(d.cts);if(d.its)setIts(d.its);if(d.coms)setComs(d.coms);if(d.team)setTeam(d.team);if(d.fr)setFr(d.fr);if(d.mktLists)setMktLists(d.mktLists);if(d.mktTpls)setMktTpls(d.mktTpls);loaded=true;setLoadedFromStorage(true);}}else{setLoadInfo("Storage empty - use Import DATA");}}catch(e){setLoadInfo("Load error: "+e.message);}if(!loaded){setCls(SEED.cls);setCts(SEED.cts);setIts(SEED.its);setComs(SEED.coms);setTeam(SEED.team);setFr(SEED.fr);}setOk(true);})();},[authed]);
+  useEffect(function(){if(!authed)return;(async function(){var loaded=false;try{var rv=await storage.get(KS,true);if(rv&&rv.value){var d=JSON.parse(rv.value);setLoadInfo("Loaded: "+(d.cls||[]).length+"cl/"+(d.cts||[]).length+"ct/"+(d.its||[]).length+"int");if(d.cls&&d.cls.length>0){setCls(d.cls);if(d.cts)setCts(d.cts);if(d.its)setIts(d.its);if(d.coms)setComs(d.coms);if(d.team)setTeam(d.team);if(d.fr)setFr(d.fr);if(d.mktLists)setMktLists(d.mktLists);if(d.mktTpls)setMktTpls(d.mktTpls);loaded=true;setLoadedFromStorage(true);var v=d._ver||0;setDataVer(v);dataVerR.current=v;}}else{setLoadInfo("Storage empty - use Import DATA");}}catch(e){setLoadInfo("Load error: "+e.message);}if(!loaded){setCls(SEED.cls);setCts(SEED.cts);setIts(SEED.its);setComs(SEED.coms);setTeam(SEED.team);setFr(SEED.fr);}setOk(true);})();},[authed]);
 
   useEffect(function(){if(!ok||cls.length===0)return;var changed=false;var cleaned=cls.map(function(c){if((c.status==="Hard Commit"||c.status==="Invested")&&(c.targetAmt||c.probability)){changed=true;return M(c,{targetAmt:0,probability:null});}return c;});if(changed){setCls(cleaned);clsR.current=cleaned;markDirty();}},[ok]);
 
   var clsR=r(cls);clsR.current=cls;var ctsR=r(cts);ctsR.current=cts;var itsR=r(its);itsR.current=its;var comsR=r(coms);comsR.current=coms;var teamR=r(team);teamR.current=team;var frR=r(fr);frR.current=fr;var mktListsR=r(mktLists);mktListsR.current=mktLists;var mktTplsR=r(mktTpls);mktTplsR.current=mktTpls;
 
   function markDirty(){setDirty(true);}
-  function forceSave(){
+  async function forceSave(){
     if(!loadedFromStorage&&!dirty){setSaveErr(true);setLoadInfo("Cannot save: no data.");setTimeout(function(){setSaveErr(false);},5000);return;}
     setForceSaving(true);setSaveErr(false);
     var data={cls:clsR.current,cts:ctsR.current,its:itsR.current,coms:comsR.current,team:teamR.current,fr:frR.current,mktLists:mktListsR.current,mktTpls:mktTplsR.current};
+    data._ver=(dataVerR.current||0)+1;
     var json=JSON.stringify(data);var done=false;
-    function finish(isOk){if(done)return;done=true;setForceSaving(false);if(isOk){setDirty(false);setSaveOk(true);setLoadInfo("Wrote "+json.length+" bytes");setTimeout(function(){setSaveOk(false);},2500);}else{setSaveErr(true);setLoadInfo("Write failed");setTimeout(function(){setSaveErr(false);},4000);}}
-    try{var p=storage.set(KS,json,true);if(p&&typeof p.then==="function"){p.then(function(rv2){finish(!!rv2);}).catch(function(){finish(false);});}else{finish(true);}}catch(e){finish(false);}
+    function finish(isOk){if(done)return;done=true;setForceSaving(false);if(isOk){setDirty(false);setSaveOk(true);dataVerR.current=data._ver;setDataVer(data._ver);setLoadInfo("Wrote "+json.length+" bytes");setTimeout(function(){setSaveOk(false);},2500);}else{setSaveErr(true);setLoadInfo("Write failed");setTimeout(function(){setSaveErr(false);},4000);}}
+    try{
+      var checkR=await storage.get(KS,true);
+      if(checkR&&checkR.value){var remote=JSON.parse(checkR.value);var remoteVer=remote._ver||0;if(remoteVer>dataVerR.current){setForceSaving(false);setDelPend({msg:"Data has been modified by another user. Reload the page (Cmd+R / F5) to get the latest version before saving.",fn:function(){}});return;}}
+      var p=storage.set(KS,json,true);if(p&&typeof p.then==="function"){p.then(function(rv2){finish(!!rv2);}).catch(function(){finish(false);});}else{finish(true);}}catch(e){finish(false);}
     setTimeout(function(){finish(true);},5000);
   }
 
