@@ -98,6 +98,8 @@ export default function App(){
   var [tagI,setTagI]=s(""),[vehI,setVehI]=s(""),[fTCl,setFTCl]=s(""),[fTFo,setFTFo]=s("All"),[fTOrd,setFTOrd]=s("desc");
   var [frTab,setFrTab]=s("raif"),[raifSub,setRaifSub]=s("terms"),[delPend,setDelPend]=s(null),[jsonTxt,setJsonTxt]=s("");
   var [saveOk,setSaveOk]=s(false),[saveErr,setSaveErr]=s(false),[loadInfo,setLoadInfo]=s(""),[loadedFromStorage,setLoadedFromStorage]=s(false),[forceSaving,setForceSaving]=s(false),[dirty,setDirty]=s(false);
+  var [dataVer,setDataVer]=s(0);
+  var dataVerR=r(0);
   var [mktLists,setMktLists]=s([]),[mktTpls,setMktTpls]=s([]);
   var KS="fost9";
   var SEED={cls:[],cts:[],its:[],team:D0_TEAM,fr:D0_FR,coms:[],mktLists:[],mktTpls:[]};
@@ -118,7 +120,7 @@ export default function App(){
     function finish(isOk){if(done)return;done=true;setForceSaving(false);if(isOk){setDirty(false);setSaveOk(true);dataVerR.current=data._ver;setDataVer(data._ver);setLoadInfo("Wrote "+json.length+" bytes");setTimeout(function(){setSaveOk(false);},2500);}else{setSaveErr(true);setLoadInfo("Write failed");setTimeout(function(){setSaveErr(false);},4000);}}
     try{
       var checkR=await storage.get(KS,true);
-      if(checkR&&checkR.value){var remote=JSON.parse(checkR.value);var remoteVer=remote._ver||0;if(remoteVer>dataVerR.current){setForceSaving(false);setDelPend({msg:"Data has been modified by another user. Reload the page (Cmd+R / F5) to get the latest version before saving.",fn:function(){}});return;}}
+      if(checkR&&checkR.value){try{var remote=JSON.parse(checkR.value);var remoteVer=remote._ver||0;if(remoteVer>dataVerR.current){setForceSaving(false);setDelPend({msg:"Someone else saved. Press Cmd+R (Mac) or F5 (Windows) to reload before saving.",fn:function(){}});return;}}catch(pe){}}
       var p=storage.set(KS,json,true);if(p&&typeof p.then==="function"){p.then(function(rv2){finish(!!rv2);}).catch(function(){finish(false);});}else{finish(true);}}catch(e){finish(false);}
     setTimeout(function(){finish(true);},5000);
   }
