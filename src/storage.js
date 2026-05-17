@@ -1,14 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
-
 const isSandbox = typeof window !== "undefined" && typeof window.storage !== "undefined";
-
-const supa = !isSandbox
+export const supa = !isSandbox
   ? createClient(
       import.meta.env.VITE_SUPABASE_URL,
       import.meta.env.VITE_SUPABASE_ANON_KEY
     )
   : null;
-
 const storage = {
   get: async (key, shared) => {
     if (isSandbox) return window.storage.get(key, shared);
@@ -31,5 +28,4 @@ const storage = {
     return { value: data.value };
   },
 };
-
 export default storage;
