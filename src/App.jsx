@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import storage from "./storage";
-import { createClient } from "@supabase/supabase-js";
-
-var _supa = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+import storage, { supa as _supa } from "./storage";
 
 function downloadCSV(text, filename){
   var blob = new Blob([text], {type:"text/csv;charset=utf-8;"});
