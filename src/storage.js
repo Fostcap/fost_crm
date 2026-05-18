@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 const isSandbox = typeof window !== "undefined" && typeof window.storage !== "undefined";
-export const supa = !isSandbox
+const supa = !isSandbox
   ? createClient(
       import.meta.env.VITE_SUPABASE_URL,
       import.meta.env.VITE_SUPABASE_ANON_KEY
